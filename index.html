@@ -262,6 +262,35 @@ input[type=range]{accent-color:var(--indigo);width:160px;}
         </div>
       </div>
     </div>
+    <!-- Direct boiling point entry override -->
+    <div class="panel">
+      <div class="panel-header"><span class="panel-title">Direct boiling point entry</span></div>
+      <div class="panel-body">
+        <label style="display:flex;align-items:center;gap:10px;cursor:pointer;font-size:13px;color:var(--text2);margin-bottom:14px">
+          <input type="checkbox" id="sd-direct-mode" onchange="onDirectModeToggle()" style="accent-color:var(--purple);width:15px;height:15px">
+          <span>Enter boiling points directly — skip SimDist upload and peak picking</span>
+        </label>
+        <div id="sd-direct-inputs" style="display:none">
+          <div style="font-size:12px;color:var(--text2);margin-bottom:12px">Enter the atmospheric normal boiling points of your two pseudo-components. Use literature values, NIST data, or your own GC/distillation measurements. These feed directly into the Clausius-Clapeyron model in Step 3.</div>
+          <div class="form-row">
+            <div class="form-group">
+              <label>T_b1 — light component (°C, atmospheric)</label>
+              <input type="number" id="sd-tb1-direct" value="280" min="50" max="600" step="1" style="width:130px" oninput="onDirectTbChange()">
+            </div>
+            <div class="form-group">
+              <label>T_b2 — heavy component (°C, atmospheric)</label>
+              <input type="number" id="sd-tb2-direct" value="350" min="50" max="700" step="1" style="width:130px" oninput="onDirectTbChange()">
+            </div>
+            <div class="form-group">
+              <label>Feed light fraction z₁ (wt%)</label>
+              <input type="number" id="sd-xF-direct" value="50" min="1" max="99" step="1" style="width:110px" oninput="onDirectTbChange()">
+            </div>
+          </div>
+          <div id="sd-direct-preview" style="font-family:var(--mono);font-size:11px;color:var(--text3);margin-top:4px"></div>
+        </div>
+      </div>
+    </div>
+
     <div id="sim-curve-preview" style="display:none">
       <div class="panel">
         <div class="panel-header"><span class="panel-title">Differential signal — click Next to pick peaks</span></div>
@@ -276,7 +305,13 @@ input[type=range]{accent-color:var(--indigo);width:160px;}
 </div>
 
 <!-- ── S1: Peak picking canvas ── -->
-<div class="step-page" id="sim-page1">
+<div class="step-page" id="sim-page1" style="position:relative">
+  <!-- Direct-mode overlay: shown instead of peak picking when checkbox is checked -->
+  <div id="sim-page1-skip-overlay" style="display:none;position:absolute;inset:0;z-index:10;background:rgba(245,244,240,0.92);flex-direction:column;align-items:center;justify-content:center;gap:16px;pointer-events:none">
+    <div style="font-size:32px;opacity:.25">⊘</div>
+    <div style="font-family:var(--mono);font-size:11px;text-transform:uppercase;letter-spacing:.1em;color:var(--text3)">Step skipped</div>
+    <div style="font-size:13px;color:var(--text2);text-align:center;max-width:340px;line-height:1.6">Boiling points entered directly in Step 1 — peak picking is not required for this workflow.</div>
+  </div>
   <div class="topbar">
     <div><div class="topbar-title">SimDist — Step 2: Pick component peaks</div><div class="topbar-desc">Click the apex of each primary component peak to extract boiling points</div></div>
     <div class="topbar-actions">
@@ -344,7 +379,7 @@ input[type=range]{accent-color:var(--indigo);width:160px;}
 <div class="step-page" id="sim-page2">
   <div class="topbar">
     <div><div class="topbar-title">SimDist — Step 3: Build α(T,P) model</div><div class="topbar-desc">Derive relative volatility surface from extracted boiling points</div></div>
-    <div class="topbar-actions"><button class="btn" onclick="goSimStep(1)">← Back</button><button class="btn ghost" onclick="saveVLEDataset()" title="Save current model for use in Real Units">Save VLE dataset ↓</button><button class="btn purple" onclick="goSimStep(3)">Next →</button></div>
+    <div class="topbar-actions"><button class="btn" onclick="simDirectMode?goSimStep(0):goSimStep(1)">← Back</button><button class="btn ghost" onclick="saveVLEDataset()" title="Save current model for use in Real Units">Save VLE dataset ↓</button><button class="btn purple" onclick="goSimStep(3)">Next →</button></div>
   </div>
   <div class="content">
     <div class="info-box purple">
@@ -3699,12 +3734,99 @@ function scrollDoc(id){
   if(el) el.scrollIntoView({behavior:'smooth',block:'start'});
 }
 
+// ── Direct boiling point entry mode ─────────────────────────────
+let simDirectMode = false;
+
+function onDirectModeToggle(){
+  simDirectMode = document.getElementById('sd-direct-mode').checked;
+  const inputs    = document.getElementById('sd-direct-inputs');
+  const uploadZone = document.getElementById('sim-upload-zone');
+  const loadBtn   = document.querySelector('button[onclick="loadSimSynthetic()"]');
+  const overlay   = document.getElementById('sim-page1-skip-overlay');
+  // Nav item for step 2 (index 1 in #nav-simdist)
+  const navItems  = document.querySelectorAll('#nav-simdist .nav-item');
+
+  if(simDirectMode){
+    inputs.style.display = 'block';
+    uploadZone.style.opacity = '0.4';
+    uploadZone.style.pointerEvents = 'none';
+    if(loadBtn) loadBtn.style.opacity = '0.4';
+    // Grey out nav step 2
+    if(navItems[1]){ navItems[1].style.opacity='0.35'; navItems[1].style.pointerEvents='none'; }
+    onDirectTbChange();
+  } else {
+    inputs.style.display = 'none';
+    uploadZone.style.opacity = '';
+    uploadZone.style.pointerEvents = '';
+    if(loadBtn) loadBtn.style.opacity = '';
+    // Restore nav step 2
+    if(navItems[1]){ navItems[1].style.opacity=''; navItems[1].style.pointerEvents=''; }
+    if(overlay) overlay.style.display = 'none';
+    const hasFile = simDiffData.length > 0;
+    document.getElementById('sim-btn-next0').disabled = !hasFile;
+  }
+}
+
+function onDirectTbChange(){
+  const tb1 = parseFloat(document.getElementById('sd-tb1-direct').value) || 280;
+  const tb2 = parseFloat(document.getElementById('sd-tb2-direct').value) || 350;
+  const xF_pct = parseFloat(document.getElementById('sd-xF-direct').value) || 50;
+  const mw1 = +document.getElementById('sd-mw1').value || 180;
+  const mw2 = +document.getElementById('sd-mw2').value || 320;
+
+  // Validate
+  const ok = tb1 > 0 && tb2 > tb1 && xF_pct > 0 && xF_pct < 100;
+  document.getElementById('sim-btn-next0').disabled = !ok;
+
+  if(ok){
+    const dHR1 = dHR_LeeKesler(tb1+273.15, mw1);
+    const dHR2 = dHR_LeeKesler(tb2+273.15, mw2);
+    document.getElementById('sd-direct-preview').textContent =
+      `ΔTb = ${(tb2-tb1).toFixed(0)}°C  |  dHR₁ = ${dHR1.toFixed(0)} K  |  dHR₂ = ${dHR2.toFixed(0)} K`;
+  }
+}
+
+function applyDirectEntry(){
+  const tb1 = parseFloat(document.getElementById('sd-tb1-direct').value) || 280;
+  const tb2 = parseFloat(document.getElementById('sd-tb2-direct').value) || 350;
+  const xF_pct = parseFloat(document.getElementById('sd-xF-direct').value) || 50;
+  simTb1 = tb1;
+  simTb2 = tb2;
+  simXF  = xF_pct / 100;
+  simSigma = 20; // sensible default; not used past Step 2 in direct mode
+  // Also set dHR values so buildSimModel can proceed
+  const mw1 = +document.getElementById('sd-mw1').value || 180;
+  const mw2 = +document.getElementById('sd-mw2').value || 320;
+  simDHR1 = dHR_LeeKesler(tb1+273.15, mw1);
+  simDHR2 = dHR_LeeKesler(tb2+273.15, mw2);
+  simDHR  = (simDHR1+simDHR2)/2;
+}
+
 function goSimStep(n){
+  // In direct mode: skip step 2 (peak picking), jump 0→2 and 2→0
+  if(simDirectMode){
+    if(n===1) n=2; // Next from step 1 goes straight to step 3 (build model)
+  }
   document.querySelectorAll('#simdist-pages .step-page').forEach((p,i)=>p.classList.toggle('active',i===n));
   document.querySelectorAll('#nav-simdist .nav-item').forEach((el,i)=>el.classList.toggle('active',i===n));
   document.getElementById('progress-fill').style.width=((n+1)/4*100)+'%';
-  if(n===1){ initPeakPickCanvas(); if(simPeaks.length>=2) updateSimFit(); }
-  if(n===2)buildSimModel();
+  // In direct mode, if we somehow land on step 2, show the skip overlay
+  const overlay = document.getElementById('sim-page1-skip-overlay');
+  if(n===1){
+    if(simDirectMode){
+      if(overlay){ overlay.style.display='flex'; }
+    } else {
+      if(overlay){ overlay.style.display='none'; }
+      initPeakPickCanvas();
+      if(simPeaks.length>=2) updateSimFit();
+    }
+  } else {
+    if(overlay) overlay.style.display='none';
+  }
+  if(n===2){
+    if(simDirectMode) applyDirectEntry(); // commit entered values before building model
+    buildSimModel();
+  }
   if(n===3){
     document.getElementById('sim-ds-xF').value=Math.round(simXF*100);
     document.getElementById('sim-ds-xF-val').textContent=Math.round(simXF*100)+' wt%';
