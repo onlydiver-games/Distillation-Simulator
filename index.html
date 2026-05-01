@@ -246,19 +246,77 @@ input[type=range]{accent-color:var(--indigo);width:160px;}
       </div>
     </div>
     <div class="panel">
-      <div class="panel-header"><span class="panel-title">Molecular weights</span></div>
+      <div class="panel-header"><span class="panel-title">Component properties — ΔH_vap estimation</span></div>
       <div class="panel-body">
-        <div style="font-size:12px;color:var(--text2);margin-bottom:12px">Enter the molecular weights of your two components. These drive independent ΔH_vap estimates for each fraction, giving a pressure-dependent α.</div>
-        <div class="form-row">
-          <div class="form-group">
-            <label>MW₁ — light component (g/mol)</label>
-            <input type="number" id="sd-mw1" value="180" min="50" max="2000" step="1" style="width:110px" oninput="onMWchange()">
+        <div style="font-size:12px;color:var(--text2);margin-bottom:14px">For each pseudo-component, enter MW and select the compound class closest to your feed chemistry. The tool uses a class-specific power-law correlation fitted to NIST data to estimate ΔH_vap/R. Alternatively, enter ΔH_vap directly if you have a measured or literature value.</div>
+
+        <!-- Component 1 -->
+        <div style="border:1px solid var(--border);border-radius:7px;padding:12px 14px;margin-bottom:12px;background:var(--bg2)">
+          <div style="font-family:var(--mono);font-size:10px;text-transform:uppercase;letter-spacing:.07em;color:var(--purple);margin-bottom:10px">Component 1 — light fraction</div>
+          <div style="display:grid;grid-template-columns:120px 1fr 160px;gap:12px;align-items:end;flex-wrap:wrap">
+            <div class="form-group" style="margin:0">
+              <label>MW (g/mol)</label>
+              <input type="number" id="sd-mw1" value="180" min="50" max="2000" step="1" style="width:100%" oninput="onMWchange()">
+            </div>
+            <div class="form-group" style="margin:0">
+              <label>Compound class</label>
+              <select id="sd-class1" style="width:100%" onchange="onMWchange()">
+                <option value="n_alkane">n-Alkane</option>
+                <option value="branched_alkane">Branched alkane</option>
+                <option value="cycloalkane">Cycloalkane / naphthene</option>
+                <option value="aromatic">Aromatic</option>
+                <option value="ester_ketone">Ester / ketone</option>
+                <option value="alcohol">Alcohol</option>
+                <option value="fatty_acid">Fatty acid / carboxylic acid</option>
+                <option value="custom">— Enter ΔH_vap directly —</option>
+              </select>
+            </div>
+            <div class="form-group" style="margin:0" id="sd-dhr1-custom-wrap" style="display:none">
+              <label>ΔH_vap (kJ/mol)</label>
+              <input type="number" id="sd-dhvap1" value="" min="5" max="500" step="0.1" style="width:100%" placeholder="e.g. 62.5" oninput="onMWchange()">
+            </div>
           </div>
-          <div class="form-group">
-            <label>MW₂ — heavy component (g/mol)</label>
-            <input type="number" id="sd-mw2" value="320" min="50" max="2000" step="1" style="width:110px" oninput="onMWchange()">
+          <div id="sd-dhr1-preview" style="font-family:var(--mono);font-size:11px;color:var(--text3);margin-top:8px"></div>
+        </div>
+
+        <!-- Component 2 -->
+        <div style="border:1px solid var(--border);border-radius:7px;padding:12px 14px;background:var(--bg2)">
+          <div style="font-family:var(--mono);font-size:10px;text-transform:uppercase;letter-spacing:.07em;color:var(--purple);margin-bottom:10px">Component 2 — heavy fraction</div>
+          <div style="display:grid;grid-template-columns:120px 1fr 160px;gap:12px;align-items:end;flex-wrap:wrap">
+            <div class="form-group" style="margin:0">
+              <label>MW (g/mol)</label>
+              <input type="number" id="sd-mw2" value="320" min="50" max="2000" step="1" style="width:100%" oninput="onMWchange()">
+            </div>
+            <div class="form-group" style="margin:0">
+              <label>Compound class</label>
+              <select id="sd-class2" style="width:100%" onchange="onMWchange()">
+                <option value="n_alkane">n-Alkane</option>
+                <option value="branched_alkane">Branched alkane</option>
+                <option value="cycloalkane">Cycloalkane / naphthene</option>
+                <option value="aromatic">Aromatic</option>
+                <option value="ester_ketone">Ester / ketone</option>
+                <option value="alcohol">Alcohol</option>
+                <option value="fatty_acid">Fatty acid / carboxylic acid</option>
+                <option value="custom">— Enter ΔH_vap directly —</option>
+              </select>
+            </div>
+            <div class="form-group" style="margin:0" id="sd-dhr2-custom-wrap" style="display:none">
+              <label>ΔH_vap (kJ/mol)</label>
+              <input type="number" id="sd-dhvap2" value="" min="5" max="500" step="0.1" style="width:100%" placeholder="e.g. 95.0" oninput="onMWchange()">
+            </div>
           </div>
-          <div id="mw-dhr-preview" style="margin-top:18px;font-family:var(--mono);font-size:11px;color:var(--text3)"></div>
+          <div id="sd-dhr2-preview" style="font-family:var(--mono);font-size:11px;color:var(--text3);margin-top:8px"></div>
+        </div>
+
+        <div id="mw-dhr-preview" style="margin-top:10px;font-family:var(--mono);font-size:11px;color:var(--text3)"></div>
+
+        <!-- ΔH_vap vs MW class correlation chart -->
+        <div style="margin-top:18px">
+          <div style="font-family:var(--mono);font-size:10px;text-transform:uppercase;letter-spacing:.07em;color:var(--text3);margin-bottom:8px">ΔH_vap/R vs molecular weight — class correlations</div>
+          <div style="position:relative;width:100%;aspect-ratio:16/7">
+            <canvas id="dhr-class-chart" style="position:absolute;top:0;left:0;width:100%;height:100%"></canvas>
+          </div>
+          <div id="dhr-class-legend" style="display:flex;flex-wrap:wrap;gap:6px 14px;margin-top:8px;font-size:10px;font-family:var(--mono)"></div>
         </div>
       </div>
     </div>
@@ -1740,8 +1798,22 @@ function updateSimFit(){
 // dHR = 164.823 * Tb_K^(-0.1062) * MW^(0.8325)
 // Validated against n-decane through n-tetracosane: errors < 0.5%.
 // Fitted to n-alkane NIST data C10-C24, errors < 0.5%.
-function dHR_LeeKesler(Tb_K, MW){
-  return 164.823 * Math.pow(Tb_K, -0.1062) * Math.pow(MW, 0.8325);
+// Class-specific ΔH_vap/R correlations fitted to NIST/Yaws data
+// dHR = a * MW^b  (units: K)   R² > 0.97 for all classes
+const DHR_CLASS_COEFS = {
+  n_alkane:        {a: 46.989, b: 0.9850},
+  branched_alkane: {a: 66.896, b: 0.8870},
+  cycloalkane:     {a: 51.835, b: 0.9704},
+  aromatic:        {a: 75.875, b: 0.9101},
+  ester_ketone:    {a: 78.759, b: 0.8882},
+  alcohol:         {a:277.658, b: 0.7038},
+  fatty_acid:      {a:323.996, b: 0.6888},
+};
+function dHR_LeeKesler(Tb_K, MW, compClass, dHvap_kJmol){
+  if(compClass === 'custom' && dHvap_kJmol > 0)
+    return dHvap_kJmol / 0.008314;
+  const coefs = DHR_CLASS_COEFS[compClass] || DHR_CLASS_COEFS.n_alkane;
+  return coefs.a * Math.pow(MW, coefs.b);
 }
 
 // Per-component Psat using individual dHR
@@ -1771,13 +1843,226 @@ function tFromTbsAsym(Pm, Tb1K, Tb2K, dHR1, dHR2){
 // Global dHR values — updated in buildSimModel
 let simDHR1=5800, simDHR2=5800;
 
+
+
+// ── ΔH_vap/R class correlation chart ────────────────────────────
+const DHR_SCATTER = {
+  n_alkane:       [[86.18,3795],[100.20,4399],[114.23,4994],[128.26,5600],[142.28,6184],[156.31,6805],[170.34,7400],[184.36,8021],[198.39,8628],[212.42,9237],[226.44,9785],[240.47,10401],[254.50,11001],[282.55,12244],[338.65,14554]],
+  branched_alkane:[[58.12,2562],[72.15,2970],[86.18,3344],[100.20,4000],[114.23,4593],[128.26,5224],[86.18,3164],[86.18,3294],[114.23,4228],[156.31,6530],[170.34,7149],[422.81,13136]],
+  cycloalkane:    [[70.13,3283],[84.16,3971],[98.19,4252],[112.21,4888],[138.25,6120],[140.27,6417],[140.27,6089],[210.40,9555],[308.59,13350],[218.38,9878]],
+  aromatic:       [[78.11,4070],[92.14,4572],[106.17,5225],[106.17,5082],[120.19,5765],[134.22,6316],[128.17,6708],[142.20,6730],[178.23,8914],[178.23,9082],[166.22,8437],[202.25,9608],[246.43,10345]],
+  ester_ketone:   [[88.11,4282],[116.16,5276],[130.18,5781],[144.21,6352],[158.24,6917],[172.26,7493],[186.29,8070],[200.32,8643],[214.34,9210],[228.37,9781],[242.40,10364],[270.45,11494],[142.24,6787],[170.29,8020]],
+  alcohol:        [[102.17,7411],[116.20,8037],[130.23,8540],[144.26,9247],[158.28,9802],[172.31,10223],[186.34,10929],[214.39,12091],[242.44,13534],[270.49,14531],[130.23,7836],[100.16,7458],[108.14,7323]],
+  fatty_acid:     [[116.16,8549],[144.21,9851],[172.26,11252],[200.32,12567],[228.37,14035],[256.42,14744],[284.48,15983],[282.46,15641],[280.45,15459]]
+};
+const DHR_COLORS = {
+  n_alkane:'#3d52a0', branched_alkane:'#1a7a62', cycloalkane:'#6b3a9a',
+  aromatic:'#b87a00', ester_ketone:'#b83030', alcohol:'#0a7a8a', fatty_acid:'#7a3a1a'
+};
+const DHR_LABELS = {
+  n_alkane:'n-Alkane', branched_alkane:'Branched alkane', cycloalkane:'Cycloalkane',
+  aromatic:'Aromatic', ester_ketone:'Ester/ketone', alcohol:'Alcohol', fatty_acid:'Fatty acid'
+};
+const DHR_COEFS_LOCAL = {
+  n_alkane:{a:46.989,b:0.985}, branched_alkane:{a:66.896,b:0.887},
+  cycloalkane:{a:51.835,b:0.9704}, aromatic:{a:75.875,b:0.9101},
+  ester_ketone:{a:78.759,b:0.8882}, alcohol:{a:277.658,b:0.7038}, fatty_acid:{a:323.996,b:0.6888}
+};
+
+function drawDHRClassChart(){
+  const cnv = document.getElementById('dhr-class-chart');
+  if(!cnv) return;
+  requestAnimationFrame(()=>{
+    const W = cnv.offsetWidth, H = cnv.offsetHeight;
+    if(!W||!H){ setTimeout(drawDHRClassChart,80); return; }
+    cnv.width=W; cnv.height=H;
+    const ctx = cnv.getContext('2d');
+    ctx.clearRect(0,0,W,H);
+
+    // Active classes from dropdowns
+    const act1 = document.getElementById('sd-class1')?.value||'n_alkane';
+    const act2 = document.getElementById('sd-class2')?.value||'n_alkane';
+    const active = new Set([act1,act2].filter(c=>c!=='custom'));
+
+    const mL=52,mR=12,mT=12,mB=38;
+    const pw=W-mL-mR, ph=H-mT-mB;
+    const xMin=50,xMax=450;
+    // dHR range: ~2000 to ~17000 K
+    const yMin=2000, yMax=17000;
+    const tx=x=>mL+(x-xMin)/(xMax-xMin)*pw;
+    const ty=y=>mT+ph-(y-yMin)/(yMax-yMin)*ph;
+
+    // Grid
+    ctx.strokeStyle='rgba(200,198,190,.25)'; ctx.lineWidth=.5;
+    [4000,6000,8000,10000,12000,14000,16000].forEach(y=>{
+      ctx.beginPath(); ctx.moveTo(mL,ty(y)); ctx.lineTo(mL+pw,ty(y)); ctx.stroke();
+    });
+    [100,150,200,250,300,350,400].forEach(x=>{
+      ctx.beginPath(); ctx.moveTo(tx(x),mT); ctx.lineTo(tx(x),mT+ph); ctx.stroke();
+    });
+
+    const classes = Object.keys(DHR_SCATTER);
+
+    // Draw inactive trendlines first (faded)
+    classes.forEach(cls=>{
+      if(active.has(cls)) return;
+      const {a,b} = DHR_COEFS_LOCAL[cls];
+      const col = DHR_COLORS[cls];
+      ctx.beginPath();
+      ctx.strokeStyle = col+'28';
+      ctx.lineWidth = 1.2;
+      ctx.setLineDash([4,3]);
+      for(let i=0;i<=60;i++){
+        const x=xMin+i*(xMax-xMin)/60;
+        const y=a*Math.pow(x,b);
+        i===0?ctx.moveTo(tx(x),ty(y)):ctx.lineTo(tx(x),ty(y));
+      }
+      ctx.stroke();
+      ctx.setLineDash([]);
+    });
+
+    // Draw inactive scatter faded
+    classes.forEach(cls=>{
+      if(active.has(cls)) return;
+      const col = DHR_COLORS[cls];
+      DHR_SCATTER[cls].forEach(([mw,dhr])=>{
+        ctx.beginPath();
+        ctx.arc(tx(mw),ty(dhr),2.5,0,Math.PI*2);
+        ctx.fillStyle = col+'30';
+        ctx.fill();
+      });
+    });
+
+    // Draw active trendlines bold
+    active.forEach(cls=>{
+      if(!DHR_COEFS_LOCAL[cls]) return;
+      const {a,b} = DHR_COEFS_LOCAL[cls];
+      const col = DHR_COLORS[cls];
+      ctx.beginPath();
+      ctx.strokeStyle = col;
+      ctx.lineWidth = 2.2;
+      ctx.setLineDash([]);
+      for(let i=0;i<=80;i++){
+        const x=xMin+i*(xMax-xMin)/80;
+        const y=a*Math.pow(x,b);
+        i===0?ctx.moveTo(tx(x),ty(y)):ctx.lineTo(tx(x),ty(y));
+      }
+      ctx.stroke();
+
+      // Scatter dots
+      DHR_SCATTER[cls].forEach(([mw,dhr])=>{
+        ctx.beginPath();
+        ctx.arc(tx(mw),ty(dhr),3.8,0,Math.PI*2);
+        ctx.fillStyle=col;
+        ctx.fill();
+        ctx.strokeStyle='white'; ctx.lineWidth=1; ctx.stroke();
+      });
+
+      // End label on trendline
+      const mwEnd = 440;
+      const yEnd = a*Math.pow(mwEnd,b);
+      if(yEnd>=yMin&&yEnd<=yMax){
+        ctx.font='bold 9px DM Mono,monospace';
+        ctx.fillStyle=col;
+        ctx.textAlign='left';
+        ctx.fillText(DHR_LABELS[cls],tx(mwEnd)+4,ty(yEnd)+3);
+      }
+    });
+
+    // MW markers for component 1 and 2
+    const mw1=+document.getElementById('sd-mw1').value||180;
+    const mw2=+document.getElementById('sd-mw2').value||320;
+    [[mw1,act1,'1'],[mw2,act2,'2']].forEach(([mw,cls,lbl])=>{
+      if(cls==='custom'||!DHR_COEFS_LOCAL[cls]) return;
+      const {a,b}=DHR_COEFS_LOCAL[cls];
+      const dhr=a*Math.pow(mw,b);
+      if(mw<xMin||mw>xMax||dhr<yMin||dhr>yMax) return;
+      const col=DHR_COLORS[cls];
+      // Crosshairs
+      ctx.setLineDash([3,3]);
+      ctx.strokeStyle=col+'88'; ctx.lineWidth=1;
+      ctx.beginPath(); ctx.moveTo(tx(mw),mT); ctx.lineTo(tx(mw),ty(dhr)); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(mL,ty(dhr)); ctx.lineTo(tx(mw),ty(dhr)); ctx.stroke();
+      ctx.setLineDash([]);
+      // Diamond marker
+      ctx.save();
+      ctx.translate(tx(mw),ty(dhr));
+      ctx.rotate(Math.PI/4);
+      ctx.fillStyle=col;
+      ctx.fillRect(-5,-5,10,10);
+      ctx.restore();
+      ctx.font='bold 9px DM Mono,monospace';
+      ctx.fillStyle=col;
+      ctx.textAlign='center';
+      ctx.fillText('C'+lbl,tx(mw),ty(dhr)-10);
+    });
+
+    // Axes
+    ctx.strokeStyle='rgba(100,100,100,.4)'; ctx.lineWidth=.5; ctx.strokeRect(mL,mT,pw,ph);
+    ctx.fillStyle='#6b6860'; ctx.font='9px DM Mono,monospace'; ctx.textAlign='center';
+    [100,150,200,250,300,350,400].forEach(x=>{
+      ctx.fillText(x,tx(x),mT+ph+14);
+    });
+    ctx.fillText('Molecular weight (g/mol)',mL+pw/2,mT+ph+28);
+    ctx.textAlign='right';
+    [4000,6000,8000,10000,12000,14000,16000].forEach(y=>{
+      ctx.fillText((y/1000).toFixed(0)+'k',mL-4,ty(y)+3);
+    });
+    ctx.save();
+    ctx.translate(13,mT+ph/2);
+    ctx.rotate(-Math.PI/2);
+    ctx.textAlign='center';
+    ctx.fillText('ΔH_vap/R (K)',0,0);
+    ctx.restore();
+
+    // Legend
+    const leg = document.getElementById('dhr-class-legend');
+    if(leg){
+      leg.innerHTML = classes.map(cls=>{
+        const isActive = active.has(cls);
+        const col = DHR_COLORS[cls];
+        return `<span style="display:flex;align-items:center;gap:4px;opacity:${isActive?1:0.35};transition:opacity .2s">
+          <span style="display:inline-block;width:20px;height:2.5px;background:${col};border-radius:2px"></span>
+          <span style="color:${isActive?col:'var(--text3)'};font-weight:${isActive?600:400}">${DHR_LABELS[cls]}</span>
+        </span>`;
+      }).join('');
+    }
+  });
+}
+
 function onMWchange(){
-  const mw1=+document.getElementById('sd-mw1').value||180;
-  const mw2=+document.getElementById('sd-mw2').value||320;
-  const Tb1K=simTb1+273.15, Tb2K=simTb2+273.15;
-  const d1=dHR_LeeKesler(Tb1K,mw1), d2=dHR_LeeKesler(Tb2K,mw2);
-  document.getElementById('mw-dhr-preview').textContent=
-    `ΔH_vap,1/R ≈ ${d1.toFixed(0)} K  |  ΔH_vap,2/R ≈ ${d2.toFixed(0)} K`;
+  const mw1 = +document.getElementById('sd-mw1').value||180;
+  const mw2 = +document.getElementById('sd-mw2').value||320;
+  const cls1 = document.getElementById('sd-class1')?.value||'n_alkane';
+  const cls2 = document.getElementById('sd-class2')?.value||'n_alkane';
+  const dhv1 = parseFloat(document.getElementById('sd-dhvap1')?.value)||0;
+  const dhv2 = parseFloat(document.getElementById('sd-dhvap2')?.value)||0;
+
+  const wrap1 = document.getElementById('sd-dhr1-custom-wrap');
+  const wrap2 = document.getElementById('sd-dhr2-custom-wrap');
+  if(wrap1) wrap1.style.display = cls1==='custom'?'block':'none';
+  if(wrap2) wrap2.style.display = cls2==='custom'?'block':'none';
+
+  simDHR1 = dHR_LeeKesler(0, mw1, cls1, dhv1);
+  simDHR2 = dHR_LeeKesler(0, mw2, cls2, dhv2);
+  simDHR  = (simDHR1+simDHR2)/2;
+
+  const CLASS_LABELS={n_alkane:'n-Alkane',branched_alkane:'Branched alkane',
+    cycloalkane:'Cycloalkane',aromatic:'Aromatic',ester_ketone:'Ester/ketone',
+    alcohol:'Alcohol',fatty_acid:'Fatty acid',custom:'Direct entry'};
+
+  const p1=document.getElementById('sd-dhr1-preview');
+  const p2=document.getElementById('sd-dhr2-preview');
+  if(p1) p1.textContent = cls1==='custom'&&dhv1<=0
+    ? '⚠ Enter ΔH_vap value above'
+    : `dHR₁ = ${simDHR1.toFixed(0)} K  (${CLASS_LABELS[cls1]||cls1}, MW ${mw1})`;
+  if(p2) p2.textContent = cls2==='custom'&&dhv2<=0
+    ? '⚠ Enter ΔH_vap value above'
+    : `dHR₂ = ${simDHR2.toFixed(0)} K  (${CLASS_LABELS[cls2]||cls2}, MW ${mw2})`;
+
+  const el=document.getElementById('mw-dhr-preview');
+  if(el) el.textContent=`ratio dHR₁/dHR₂ = ${(simDHR1/simDHR2).toFixed(3)}  — larger difference → stronger α pressure-dependence`;
+  drawDHRClassChart();
 }
 
 function flashRR(xF, alpha, psi){
@@ -1853,9 +2138,13 @@ function buildSimModel(){
   const mw1=+document.getElementById('sd-mw1').value||180;
   const mw2=+document.getElementById('sd-mw2').value||320;
 
-  // Compute per-component dHR via empirical power-law (n-alkane C10-C24)
-  simDHR1 = dHR_LeeKesler(Tb1K, mw1);
-  simDHR2 = dHR_LeeKesler(Tb2K, mw2);
+  // Compute per-component dHR via class-specific power-law
+  const _cls1 = document.getElementById('sd-class1')?.value || 'n_alkane';
+  const _cls2 = document.getElementById('sd-class2')?.value || 'n_alkane';
+  const _dhv1 = parseFloat(document.getElementById('sd-dhvap1')?.value) || 0;
+  const _dhv2 = parseFloat(document.getElementById('sd-dhvap2')?.value) || 0;
+  simDHR1 = dHR_LeeKesler(0, mw1, _cls1, _dhv1);
+  simDHR2 = dHR_LeeKesler(0, mw2, _cls2, _dhv2);
   // Keep legacy simDHR as average for tFromTbs fallback
   simDHR = (simDHR1+simDHR2)/2;
 
@@ -3779,8 +4068,12 @@ function onDirectTbChange(){
   document.getElementById('sim-btn-next0').disabled = !ok;
 
   if(ok){
-    const dHR1 = dHR_LeeKesler(tb1+273.15, mw1);
-    const dHR2 = dHR_LeeKesler(tb2+273.15, mw2);
+    const _dc1=document.getElementById('sd-class1')?.value||'n_alkane';
+    const _dc2=document.getElementById('sd-class2')?.value||'n_alkane';
+    const _dd1=parseFloat(document.getElementById('sd-dhvap1')?.value)||0;
+    const _dd2=parseFloat(document.getElementById('sd-dhvap2')?.value)||0;
+    const dHR1 = dHR_LeeKesler(0, mw1, _dc1, _dd1);
+    const dHR2 = dHR_LeeKesler(0, mw2, _dc2, _dd2);
     document.getElementById('sd-direct-preview').textContent =
       `ΔTb = ${(tb2-tb1).toFixed(0)}°C  |  dHR₁ = ${dHR1.toFixed(0)} K  |  dHR₂ = ${dHR2.toFixed(0)} K`;
   }
@@ -3797,8 +4090,12 @@ function applyDirectEntry(){
   // Also set dHR values so buildSimModel can proceed
   const mw1 = +document.getElementById('sd-mw1').value || 180;
   const mw2 = +document.getElementById('sd-mw2').value || 320;
-  simDHR1 = dHR_LeeKesler(tb1+273.15, mw1);
-  simDHR2 = dHR_LeeKesler(tb2+273.15, mw2);
+  const _c1 = document.getElementById('sd-class1')?.value || 'n_alkane';
+  const _c2 = document.getElementById('sd-class2')?.value || 'n_alkane';
+  const _d1 = parseFloat(document.getElementById('sd-dhvap1')?.value) || 0;
+  const _d2 = parseFloat(document.getElementById('sd-dhvap2')?.value) || 0;
+  simDHR1 = dHR_LeeKesler(0, mw1, _c1, _d1);
+  simDHR2 = dHR_LeeKesler(0, mw2, _c2, _d2);
   simDHR  = (simDHR1+simDHR2)/2;
 }
 
